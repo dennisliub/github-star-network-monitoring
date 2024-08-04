@@ -59,6 +59,8 @@ def callback():
     app.logger.info(f"Request headers: {dict(request.headers)}")
     app.logger.info(f"Request args: {dict(request.args)}")
     app.logger.info(f"Session state: {session.get('oauth_state')}")
+    app.logger.info(f"Client ID: {client_id}")
+    app.logger.info(f"Token URL: {token_url}")
 
     # Check if there's an error in the callback
     if 'error' in request.args:
@@ -74,6 +76,8 @@ def callback():
     # Verify state
     if request.args.get('state') != session.get('oauth_state'):
         app.logger.error("State mismatch. Possible CSRF attack.")
+        app.logger.error(f"Received state: {request.args.get('state')}")
+        app.logger.error(f"Stored state: {session.get('oauth_state')}")
         return jsonify({"error": "State mismatch. Possible CSRF attack."}), 400
 
     try:
@@ -87,6 +91,7 @@ def callback():
         return redirect("/dashboard")
     except Exception as e:
         app.logger.error(f"Error in callback: {str(e)}", exc_info=True)
+        app.logger.error(f"Full exception details: {repr(e)}")
         return jsonify({"error": str(e), "url": request.url, "state": session.get('oauth_state')}), 500
 
 # Add this new route to handle the root URL
