@@ -187,11 +187,12 @@ def starred_repos():
     
     github = OAuth2Session(client_id, token=token)
     starred_url = 'https://api.github.com/user/starred'
-    starred_response = github.get(starred_url)
+    params = {'sort': 'created', 'direction': 'desc', 'per_page': 20}
+    starred_response = github.get(starred_url, params=params)
     starred_repos = starred_response.json()
     
     repo_list = "<ul>"
-    for repo in starred_repos[:10]:  # Limit to first 10 repos
+    for repo in starred_repos:
         repo_list += f"<li><a href='{repo['html_url']}'>{repo['full_name']}</a></li>"
     repo_list += "</ul>"
     
