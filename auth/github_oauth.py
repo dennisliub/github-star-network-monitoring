@@ -53,11 +53,14 @@ def login():
 
 @app.route("/callback")
 def callback():
+    app.logger.info("Callback route accessed")
+    app.logger.info(f"Full request URL: {request.url}")
+    app.logger.info(f"Request method: {request.method}")
+    app.logger.info(f"Request headers: {dict(request.headers)}")
+    app.logger.info(f"Request args: {dict(request.args)}")
+    app.logger.info(f"Session state: {session.get('oauth_state')}")
+
     try:
-        app.logger.info(f"Callback received. URL: {request.url}")
-        app.logger.info(f"Session state: {session.get('oauth_state')}")
-        app.logger.info(f"Request args: {request.args}")
-        
         # Check if there's an error in the callback
         if 'error' in request.args:
             app.logger.error(f"Error in GitHub callback: {request.args['error']}")
