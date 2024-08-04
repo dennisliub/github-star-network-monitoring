@@ -29,6 +29,8 @@ def login():
     github = OAuth2Session(client_id)
     authorization_url, state = github.authorization_url(authorization_base_url)
     session['oauth_state'] = state
+    app.logger.info(f"Login initiated. Authorization URL: {authorization_url}")
+    app.logger.info(f"Expected callback URL: {request.url_root}callback")
     return redirect(authorization_url)
 
 @app.route("/callback")
