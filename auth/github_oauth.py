@@ -342,21 +342,26 @@ def similar_users_repos():
     
     # Get users who starred the same repositories
     similar_users = {}
-    for repo in starred_repos[:3]:  # Limit to first 3 repos to avoid rate limiting
+    for repo in starred_repos[:10]:  # Increased to 10 repos to get more users
         stargazers_url = f"{repo['url']}/stargazers"
-        stargazers_response = github.get(stargazers_url)
+        params = {'per_page': 100}
+        stargazers_response = github.get(stargazers_url, params=params)
         stargazers = stargazers_response.json()
         
-        for user in stargazers[:50]:  # Limit to 50 users per repo
-            if user['login'] not in similar_users:
+        for user in stargazers:
+            if user['login'] not in similar_users and len(similar_users) < 500:
                 similar_users[user['login']] = set()
+            if len(similar_users) >= 500:
+                break
+        if len(similar_users) >= 500:
+            break
     
     # Get starred repos for each similar user
     all_repos = {}
-    for username in list(similar_users.keys())[:50]:  # Limit to 50 users
+    for username in similar_users.keys():
         user_starred_repos = cache_user_stars(github, username)
         
-        for repo in user_starred_repos[:50]:  # Limit to 50 repos per user
+        for repo in user_starred_repos:
             repo_name = repo['full_name']
             starred_at = repo.get('starred_at')
             if starred_at:
