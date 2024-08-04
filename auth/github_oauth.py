@@ -105,9 +105,18 @@ def callback():
         token = github.fetch_token(token_url, client_secret=client_secret,
                                    authorization_response=request.url)
         app.logger.info("Token successfully fetched")
-        app.logger.info(f"Token: {token}")  # Be careful with logging tokens in production
+        app.logger.info(f"Token type: {type(token)}")
+        app.logger.info(f"Token keys: {token.keys()}")
         session['oauth_token'] = token
         app.logger.info(f"OAuth token received and stored in session")
+        
+        # Fetch user information
+        user_url = 'https://api.github.com/user'
+        github = OAuth2Session(client_id, token=token)
+        user_response = github.get(user_url)
+        user_info = user_response.json()
+        app.logger.info(f"User info fetched: {user_info}")
+        
         app.logger.info("Redirecting to /dashboard")
         return redirect("/dashboard")
     except Exception as e:
