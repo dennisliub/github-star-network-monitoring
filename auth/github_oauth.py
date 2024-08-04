@@ -169,8 +169,6 @@ def dashboard():
     <p>Followers: {user_info['followers']}</p>
     <p>Following: {user_info['following']}</p>
     <p>Public Repos: {user_info['public_repos']}</p>
-    <a href="/starred">View Starred Repositories</a>
-    <br>
     <a href="/similar_users?num_users=20">Find Users with Similar Interests</a>
     <br>
     <a href="/similar_repos">View Repositories You've Starred</a>
@@ -178,29 +176,6 @@ def dashboard():
     <a href="/similar_users_repos">View Repositories Starred by Users with Similar Interests</a>
     """
 
-@app.route("/starred")
-def starred_repos():
-    token = session.get('oauth_token')
-    if not token:
-        app.logger.warning("No OAuth token found in session")
-        return redirect("/login")
-    
-    github = OAuth2Session(client_id, token=token)
-    starred_url = 'https://api.github.com/user/starred'
-    params = {'sort': 'created', 'direction': 'desc', 'per_page': 20}
-    starred_response = github.get(starred_url, params=params)
-    starred_repos = starred_response.json()
-    
-    repo_list = "<ul>"
-    for repo in starred_repos:
-        repo_list += f"<li><a href='{repo['html_url']}'>{repo['full_name']}</a></li>"
-    repo_list += "</ul>"
-    
-    return f"""
-    <h1>Your Starred Repositories</h1>
-    {repo_list}
-    <a href="/dashboard">Back to Dashboard</a>
-    """
 
 @app.route("/similar_users")
 def similar_users():
