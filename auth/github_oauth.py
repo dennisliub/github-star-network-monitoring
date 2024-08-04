@@ -169,7 +169,7 @@ def dashboard():
     <p>Public Repos: {user_info['public_repos']}</p>
     <a href="/starred">View Starred Repositories</a>
     <br>
-    <a href="/similar_users">Find Users with Similar Interests</a>
+    <a href="/similar_users?num_users=20">Find Users with Similar Interests</a>
     """
 
 @app.route("/starred")
@@ -204,6 +204,9 @@ def similar_users():
     
     github = OAuth2Session(client_id, token=token)
     
+    # Get the number of users to display from the URL parameter, default to 20
+    num_users = int(request.args.get('num_users', 20))
+    
     # Get user's starred repositories
     starred_url = 'https://api.github.com/user/starred'
     starred_response = github.get(starred_url)
@@ -227,7 +230,7 @@ def similar_users():
     sorted_users = sorted(similar_users.items(), key=lambda x: x[1], reverse=True)
     
     user_list = "<ul>"
-    for user, count in sorted_users[:10]:  # Show top 10 similar users
+    for user, count in sorted_users[:num_users]:  # Show top num_users similar users
         user_list += f"<li>{user} (Shared stars: {count})</li>"
     user_list += "</ul>"
     
@@ -235,6 +238,11 @@ def similar_users():
     <h1>Users with Similar Interests</h1>
     <p>These users have starred some of the same repositories as you:</p>
     {user_list}
+    <p>
+        <a href="/similar_users?num_users=10">Show 10</a> | 
+        <a href="/similar_users?num_users=20">Show 20</a> | 
+        <a href="/similar_users?num_users=50">Show 50</a>
+    </p>
     <a href="/dashboard">Back to Dashboard</a>
     """
 
