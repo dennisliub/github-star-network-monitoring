@@ -16,7 +16,7 @@ client_id = os.environ.get("GITHUB_CLIENT_ID")
 client_secret = os.environ.get("GITHUB_CLIENT_SECRET")
 authorization_base_url = 'https://github.com/login/oauth/authorize'
 token_url = 'https://github.com/login/oauth/access_token'
-redirect_uri = os.environ.get("GITHUB_REDIRECT_URI", "http://localhost:5000/callback")
+redirect_uri = os.environ.get("GITHUB_REDIRECT_URI", "http://127.0.0.1:5000/callback")
 
 # Check if client_id and client_secret are set
 if not client_id or not client_secret:
@@ -32,6 +32,7 @@ def login():
     app.logger.info(f"Request method: {request.method}")
     app.logger.info(f"Request args: {dict(request.args)}")
     app.logger.info(f"Environment variables: {dict(os.environ)}")
+    app.logger.info(f"Redirect URI: {redirect_uri}")
     
     if not client_id:
         app.logger.error("GitHub Client ID is not set")
