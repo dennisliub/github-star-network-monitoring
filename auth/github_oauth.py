@@ -6,6 +6,12 @@ from requests_oauthlib import OAuth2Session
 # Check if we're in a development environment
 if os.environ.get('FLASK_ENV') == 'development':
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    print("OAUTHLIB_INSECURE_TRANSPORT set to 1")
+else:
+    print("FLASK_ENV is not set to 'development'")
+
+print(f"OAUTHLIB_INSECURE_TRANSPORT: {os.environ.get('OAUTHLIB_INSECURE_TRANSPORT')}")
+print(f"FLASK_ENV: {os.environ.get('FLASK_ENV')}")
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -84,6 +90,8 @@ def callback():
     app.logger.info(f"Client ID: {client_id}")
     app.logger.info(f"Token URL: {token_url}")
     app.logger.info(f"Redirect URI: {redirect_uri}")
+    app.logger.info(f"OAUTHLIB_INSECURE_TRANSPORT: {os.environ.get('OAUTHLIB_INSECURE_TRANSPORT')}")
+    app.logger.info(f"FLASK_ENV: {os.environ.get('FLASK_ENV')}")
 
     # Check if there's an error in the callback
     if 'error' in request.args:
