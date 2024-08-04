@@ -168,6 +168,8 @@ def dashboard():
     <p>Following: {user_info['following']}</p>
     <p>Public Repos: {user_info['public_repos']}</p>
     <a href="/starred">View Starred Repositories</a>
+    <br>
+    <a href="/similar_users">Find Users with Similar Interests</a>
     """
 
 @app.route("/starred")
@@ -190,6 +192,49 @@ def starred_repos():
     return f"""
     <h1>Your Starred Repositories</h1>
     {repo_list}
+    <a href="/dashboard">Back to Dashboard</a>
+    """
+
+@app.route("/similar_users")
+def similar_users():
+    token = session.get('oauth_token')
+    if not token:
+        app.logger.warning("No OAuth token found in session")
+        return redirect("/login")
+    
+    github = OAuth2Session(client_id, token=token)
+    
+    # Get user's starred repositories
+    starred_url = 'https://api.github.com/user/starred'
+    starred_response = github.get(starred_url)
+    starred_repos = starred_response.json()
+    
+    similar_users = {}
+    
+    # For each starred repo, get users who also starred it
+    for repo in starred_repos[:5]:  # Limit to first 5 repos to avoid rate limiting
+        stargazers_url = f"https://api.github.com/repos/{repo['full_name']}/stargazers"
+        stargazers_response = github.get(stargazers_url)
+        stargazers = stargazers_response.json()
+        
+        for user in stargazers:
+            if user['login'] not in similar_users:
+                similar_users[user['login']] = 1
+            else:
+                similar_users[user['login']] += 1
+    
+    # Sort users by number of shared starred repos
+    sorted_users = sorted(similar_users.items(), key=lambda x: x[1], reverse=True)
+    
+    user_list = "<ul>"
+    for user, count in sorted_users[:10]:  # Show top 10 similar users
+        user_list += f"<li>{user} (Shared stars: {count})</li>"
+    user_list += "</ul>"
+    
+    return f"""
+    <h1>Users with Similar Interests</h1>
+    <p>These users have starred some of the same repositories as you:</p>
+    {user_list}
     <a href="/dashboard">Back to Dashboard</a>
     """
 
