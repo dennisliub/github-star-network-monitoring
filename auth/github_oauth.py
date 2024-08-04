@@ -30,5 +30,3 @@ def callback():
 def dashboard():
     return "Logged in successfully!"
 
-if __name__ == "__main__":
-    app.run(debug=True)
