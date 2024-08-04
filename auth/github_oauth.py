@@ -26,6 +26,11 @@ def callback():
     session['oauth_token'] = token
     return redirect("/dashboard")  # Redirect to dashboard after successful login
 
+# Add this new route to handle the root URL
+@app.route("/")
+def home():
+    return "Welcome to the GitHub Star Network Monitoring app! <a href='/login'>Login with GitHub</a>"
+
 @app.route("/dashboard")
 def dashboard():
     return "Logged in successfully!"
