@@ -60,22 +60,30 @@ def callback():
     app.logger.info(f"Request args: {dict(request.args)}")
     app.logger.info(f"Session state: {session.get('oauth_state')}")
 
+    # Check if there's an error in the callback
+    if 'error' in request.args:
+        error_description = request.args.get('error_description', 'No description provided')
+        app.logger.error(f"Error in GitHub callback: {request.args['error']} - {error_description}")
+        return jsonify({"error": request.args['error'], "description": error_description}), 400
+
+    # Check if the code is present in the request args
+    if 'code' not in request.args:
+        app.logger.error("No code found in the callback request")
+        return jsonify({"error": "No code provided in the callback"}), 400
+
+    # Verify state
+    if request.args.get('state') != session.get('oauth_state'):
+        app.logger.error("State mismatch. Possible CSRF attack.")
+        return jsonify({"error": "State mismatch. Possible CSRF attack."}), 400
+
     try:
-        # Check if there's an error in the callback
-        if 'error' in request.args:
-            app.logger.error(f"Error in GitHub callback: {request.args['error']}")
-            return jsonify({"error": request.args['error']}), 400
-
-        # Verify state
-        if request.args.get('state') != session.get('oauth_state'):
-            app.logger.error("State mismatch. Possible CSRF attack.")
-            return jsonify({"error": "State mismatch. Possible CSRF attack."}), 400
-
         github = OAuth2Session(client_id, state=session.get('oauth_state'))
+        app.logger.info("Fetching token from GitHub")
         token = github.fetch_token(token_url, client_secret=client_secret,
                                    authorization_response=request.url)
+        app.logger.info("Token successfully fetched")
         session['oauth_token'] = token
-        app.logger.info(f"OAuth token received: {token}")
+        app.logger.info(f"OAuth token received and stored in session")
         return redirect("/dashboard")
     except Exception as e:
         app.logger.error(f"Error in callback: {str(e)}", exc_info=True)
