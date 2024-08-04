@@ -313,24 +313,13 @@ def cache_user_stars(github, username):
             return json.load(f)
     
     user_starred_url = f'https://api.github.com/users/{username}/starred'
-    user_starred_repos = []
-    page = 1
-    per_page = 100
+    params = {'sort': 'created', 'direction': 'desc', 'per_page': 100}
+    user_starred_response = github.get(user_starred_url, params=params)
+    user_starred_repos = user_starred_response.json()
 
-    while True:
-        params = {'page': page, 'per_page': per_page}
-        user_starred_response = github.get(user_starred_url, params=params)
-        repos = user_starred_response.json()
-        
-        if not repos:
-            break
-        
-        for repo in repos:
-            # Use 'created_at' as a proxy for 'starred_at'
-            repo['starred_at'] = repo['created_at']
-        
-        user_starred_repos.extend(repos)
-        page += 1
+    for repo in user_starred_repos:
+        # Use 'created_at' as a proxy for 'starred_at'
+        repo['starred_at'] = repo['created_at']
 
     with open(cache_file, 'w') as f:
         json.dump(user_starred_repos, f)
