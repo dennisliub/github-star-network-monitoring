@@ -298,6 +298,70 @@ def similar_repos():
     <a href="/dashboard">Back to Dashboard</a>
     """
 
+@app.route("/similar_users_repos")
+def similar_users_repos():
+    token = session.get('oauth_token')
+    if not token:
+        app.logger.warning("No OAuth token found in session")
+        return redirect("/login")
+    
+    github = OAuth2Session(client_id, token=token)
+    
+    # Get user's starred repositories
+    starred_url = 'https://api.github.com/user/starred'
+    starred_response = github.get(starred_url)
+    starred_repos = starred_response.json()
+    
+    # Get users who starred the same repositories
+    similar_users = {}
+    for repo in starred_repos[:5]:  # Limit to first 5 repos to avoid rate limiting
+        stargazers_url = f"{repo['url']}/stargazers"
+        stargazers_response = github.get(stargazers_url)
+        stargazers = stargazers_response.json()
+        
+        for user in stargazers[:20]:  # Limit to 20 users per repo
+            if user['login'] not in similar_users:
+                similar_users[user['login']] = set()
+    
+    # Get starred repos for each similar user
+    all_repos = {}
+    for username in similar_users:
+        user_starred_url = f'https://api.github.com/users/{username}/starred'
+        user_starred_response = github.get(user_starred_url)
+        user_starred_repos = user_starred_response.json()
+        
+        for repo in user_starred_repos[:50]:  # Limit to 50 repos per user
+            repo_name = repo['full_name']
+            if repo_name not in all_repos:
+                all_repos[repo_name] = {
+                    'url': repo['html_url'],
+                    'stars': repo['stargazers_count'],
+                    'count': 1
+                }
+            else:
+                all_repos[repo_name]['count'] += 1
+    
+    # Sort repos by count (number of similar users who starred it)
+    sorted_repos = sorted(all_repos.items(), key=lambda x: (x[1]['count'], x[1]['stars']), reverse=True)
+    
+    table_rows = ""
+    for repo_name, stats in sorted_repos[:100]:  # Show top 100 repos
+        table_rows += f"<tr><td><a href='{stats['url']}'>{repo_name}</a></td><td>{stats['stars']}</td><td>{stats['count']}</td></tr>"
+    
+    return f"""
+    <h1>Repositories Starred by Users with Similar Interests</h1>
+    <p>Here are the top repositories starred by users with similar interests to you:</p>
+    <table border="1">
+        <tr>
+            <th>Repository</th>
+            <th>Total Stars</th>
+            <th>Similar Users Who Starred</th>
+        </tr>
+        {table_rows}
+    </table>
+    <a href="/dashboard">Back to Dashboard</a>
+    """
+
 @app.route("/debug")
 def debug():
     return jsonify({
