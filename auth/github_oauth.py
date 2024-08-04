@@ -52,6 +52,11 @@ def login():
         # Log all session data (be careful with sensitive information)
         app.logger.info(f"Session data: {dict(session)}")
         
+        app.logger.info("About to return response")
+        app.logger.info(f"Final response object: {response}")
+        app.logger.info(f"Final response headers: {dict(response.headers)}")
+        app.logger.info(f"Final response status: {response.status}")
+        
         return response
     except Exception as e:
         app.logger.error(f"Error in login route: {str(e)}", exc_info=True)
