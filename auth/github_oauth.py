@@ -1,5 +1,7 @@
 import os
 import logging
+import json
+from datetime import date
 from flask import Flask, request, redirect, session, jsonify
 from requests_oauthlib import OAuth2Session
 
@@ -298,6 +300,27 @@ def similar_repos():
     <a href="/dashboard">Back to Dashboard</a>
     """
 
+def cache_user_stars(github, username):
+    cache_dir = 'cache'
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    
+    today = date.today().isoformat()
+    cache_file = os.path.join(cache_dir, f"{username}_{today}.json")
+    
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+    
+    user_starred_url = f'https://api.github.com/users/{username}/starred'
+    user_starred_response = github.get(user_starred_url)
+    user_starred_repos = user_starred_response.json()
+    
+    with open(cache_file, 'w') as f:
+        json.dump(user_starred_repos, f)
+    
+    return user_starred_repos
+
 @app.route("/similar_users_repos")
 def similar_users_repos():
     token = session.get('oauth_token')
@@ -319,16 +342,14 @@ def similar_users_repos():
         stargazers_response = github.get(stargazers_url)
         stargazers = stargazers_response.json()
         
-        for user in stargazers[:20]:  # Limit to 20 users per repo
+        for user in stargazers[:100]:  # Increased to 100 users per repo
             if user['login'] not in similar_users:
                 similar_users[user['login']] = set()
     
     # Get starred repos for each similar user
     all_repos = {}
-    for username in similar_users:
-        user_starred_url = f'https://api.github.com/users/{username}/starred'
-        user_starred_response = github.get(user_starred_url)
-        user_starred_repos = user_starred_response.json()
+    for username in list(similar_users.keys())[:100]:  # Limit to 100 users
+        user_starred_repos = cache_user_stars(github, username)
         
         for repo in user_starred_repos[:50]:  # Limit to 50 repos per user
             repo_name = repo['full_name']
