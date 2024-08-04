@@ -26,6 +26,11 @@ def login():
     app.logger.info("Login route accessed")
     app.logger.info(f"Client ID: {client_id}")
     app.logger.info(f"Authorization base URL: {authorization_base_url}")
+    app.logger.info(f"Request URL: {request.url}")
+    app.logger.info(f"Request headers: {dict(request.headers)}")
+    app.logger.info(f"Request method: {request.method}")
+    app.logger.info(f"Request args: {dict(request.args)}")
+    app.logger.info(f"Environment variables: {dict(os.environ)}")
     
     if not client_id:
         app.logger.error("GitHub Client ID is not set")
