@@ -172,6 +172,8 @@ def dashboard():
     <a href="/similar_users?num_users=20">Find Users with Similar Interests</a>
     <br>
     <a href="/similar_repos">View Repositories You've Starred</a>
+    <br>
+    <a href="/similar_users_repos">View Repositories Starred by Users with Similar Interests</a>
     """
 
 @app.route("/starred")
