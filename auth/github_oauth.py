@@ -33,8 +33,8 @@ def login():
     
     try:
         app.logger.info("Creating OAuth2Session")
-        github = OAuth2Session(client_id)
-        app.logger.info("OAuth2Session created successfully")
+        github = OAuth2Session(client_id, redirect_uri=request.url_root + 'callback')
+        app.logger.info(f"OAuth2Session created successfully with redirect_uri: {request.url_root + 'callback'}")
         
         app.logger.info("Generating authorization URL")
         authorization_url, state = github.authorization_url(authorization_base_url)
@@ -42,13 +42,15 @@ def login():
         
         session['oauth_state'] = state
         app.logger.info(f"OAuth state stored in session: {state}")
-        app.logger.info(f"Expected callback URL: {request.url_root}callback")
         
         app.logger.info("Preparing to redirect to authorization URL")
         response = redirect(authorization_url)
         app.logger.info(f"Redirect response created: {response}")
         app.logger.info(f"Redirect status code: {response.status_code}")
         app.logger.info(f"Redirect headers: {dict(response.headers)}")
+        
+        # Log all session data (be careful with sensitive information)
+        app.logger.info(f"Session data: {dict(session)}")
         
         return response
     except Exception as e:
