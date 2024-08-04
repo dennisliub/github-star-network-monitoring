@@ -326,7 +326,8 @@ def cache_user_stars(github, username):
             break
         
         for repo in repos:
-            repo['starred_at'] = user_starred_response.headers.get('Date')
+            # Use 'created_at' as a proxy for 'starred_at'
+            repo['starred_at'] = repo['created_at']
         
         user_starred_repos.extend(repos)
         page += 1
@@ -368,8 +369,12 @@ def similar_users_repos():
         
         for repo in user_starred_repos[:100]:  # Increased to 100 repos per user
             repo_name = repo['full_name']
-            starred_at = datetime.strptime(repo['starred_at'], "%Y-%m-%dT%H:%M:%SZ")
-            age_weight = calculate_age_weight(starred_at)
+            starred_at = repo.get('starred_at')
+            if starred_at:
+                starred_at = datetime.strptime(starred_at, "%Y-%m-%dT%H:%M:%SZ")
+                age_weight = calculate_age_weight(starred_at)
+            else:
+                age_weight = 0.2  # Default to lowest weight if no date available
             
             if repo_name not in all_repos:
                 all_repos[repo_name] = {
