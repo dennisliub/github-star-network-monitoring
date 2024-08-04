@@ -88,11 +88,18 @@ def callback():
         app.logger.info("Token successfully fetched")
         session['oauth_token'] = token
         app.logger.info(f"OAuth token received and stored in session")
+        app.logger.info("Redirecting to /dashboard")
         return redirect("/dashboard")
     except Exception as e:
         app.logger.error(f"Error in callback: {str(e)}", exc_info=True)
         app.logger.error(f"Full exception details: {repr(e)}")
         return jsonify({"error": str(e), "url": request.url, "state": session.get('oauth_state')}), 500
+
+@app.after_request
+def after_request(response):
+    app.logger.info(f"After request: status code {response.status_code}")
+    app.logger.info(f"Response headers: {dict(response.headers)}")
+    return response
 
 # Add this new route to handle the root URL
 @app.route("/")
