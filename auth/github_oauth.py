@@ -342,16 +342,16 @@ def similar_users_repos():
         stargazers_response = github.get(stargazers_url)
         stargazers = stargazers_response.json()
         
-        for user in stargazers[:100]:  # Increased to 100 users per repo
+        for user in stargazers[:500]:  # Increased to 500 users per repo
             if user['login'] not in similar_users:
                 similar_users[user['login']] = set()
     
     # Get starred repos for each similar user
     all_repos = {}
-    for username in list(similar_users.keys())[:100]:  # Limit to 100 users
+    for username in list(similar_users.keys())[:500]:  # Limit to 500 users
         user_starred_repos = cache_user_stars(github, username)
         
-        for repo in user_starred_repos[:50]:  # Limit to 50 repos per user
+        for repo in user_starred_repos[:100]:  # Increased to 100 repos per user
             repo_name = repo['full_name']
             if repo_name not in all_repos:
                 all_repos[repo_name] = {
