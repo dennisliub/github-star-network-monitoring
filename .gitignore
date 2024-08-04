@@ -1,2 +1,7 @@
 .aider*
 .DS_Store
+cache/*
+poetry.lock
+__pycache__/*
+*/__pycache__/*.pyc
+
