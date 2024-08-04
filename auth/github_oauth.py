@@ -38,15 +38,19 @@ def login():
         
         app.logger.info("Generating authorization URL")
         authorization_url, state = github.authorization_url(authorization_base_url)
-        app.logger.info("Authorization URL generated successfully")
+        app.logger.info(f"Authorization URL generated: {authorization_url}")
         
         session['oauth_state'] = state
-        app.logger.info(f"Login initiated. Authorization URL: {authorization_url}")
+        app.logger.info(f"OAuth state stored in session: {state}")
         app.logger.info(f"Expected callback URL: {request.url_root}callback")
-        app.logger.info(f"State: {state}")
         
-        app.logger.info("Redirecting to authorization URL")
-        return redirect(authorization_url)
+        app.logger.info("Preparing to redirect to authorization URL")
+        response = redirect(authorization_url)
+        app.logger.info(f"Redirect response created: {response}")
+        app.logger.info(f"Redirect status code: {response.status_code}")
+        app.logger.info(f"Redirect headers: {dict(response.headers)}")
+        
+        return response
     except Exception as e:
         app.logger.error(f"Error in login route: {str(e)}", exc_info=True)
         return f"An error occurred: {str(e)}", 500
