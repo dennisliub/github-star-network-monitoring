@@ -38,7 +38,18 @@ def callback():
     try:
         app.logger.info(f"Callback received. URL: {request.url}")
         app.logger.info(f"Session state: {session.get('oauth_state')}")
+        app.logger.info(f"Request args: {request.args}")
         
+        # Check if there's an error in the callback
+        if 'error' in request.args:
+            app.logger.error(f"Error in GitHub callback: {request.args['error']}")
+            return jsonify({"error": request.args['error']}), 400
+
+        # Verify state
+        if request.args.get('state') != session.get('oauth_state'):
+            app.logger.error("State mismatch. Possible CSRF attack.")
+            return jsonify({"error": "State mismatch. Possible CSRF attack."}), 400
+
         github = OAuth2Session(client_id, state=session.get('oauth_state'))
         token = github.fetch_token(token_url, client_secret=client_secret,
                                    authorization_response=request.url)
@@ -76,6 +87,15 @@ def debug():
             "GITHUB_CLIENT_ID": os.environ.get("GITHUB_CLIENT_ID"),
             "GITHUB_CLIENT_SECRET": "***" if os.environ.get("GITHUB_CLIENT_SECRET") else None
         }
+    })
+
+@app.route("/raw_callback")
+def raw_callback():
+    return jsonify({
+        "url": request.url,
+        "args": dict(request.args),
+        "headers": dict(request.headers),
+        "method": request.method
     })
 
 if __name__ == "__main__":
