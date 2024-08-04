@@ -42,3 +42,6 @@ def home():
 def dashboard():
     return "Logged in successfully!"
 
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
