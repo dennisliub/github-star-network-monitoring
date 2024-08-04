@@ -24,17 +24,28 @@ if not client_id or not client_secret:
 @app.route("/login")
 def login():
     app.logger.info("Login route accessed")
+    app.logger.info(f"Client ID: {client_id}")
+    app.logger.info(f"Authorization base URL: {authorization_base_url}")
+    
     if not client_id:
         app.logger.error("GitHub Client ID is not set")
         return "Error: GitHub Client ID is not set. Please configure the application correctly.", 500
     
     try:
+        app.logger.info("Creating OAuth2Session")
         github = OAuth2Session(client_id)
+        app.logger.info("OAuth2Session created successfully")
+        
+        app.logger.info("Generating authorization URL")
         authorization_url, state = github.authorization_url(authorization_base_url)
+        app.logger.info("Authorization URL generated successfully")
+        
         session['oauth_state'] = state
         app.logger.info(f"Login initiated. Authorization URL: {authorization_url}")
         app.logger.info(f"Expected callback URL: {request.url_root}callback")
         app.logger.info(f"State: {state}")
+        
+        app.logger.info("Redirecting to authorization URL")
         return redirect(authorization_url)
     except Exception as e:
         app.logger.error(f"Error in login route: {str(e)}", exc_info=True)
