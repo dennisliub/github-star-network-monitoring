@@ -154,7 +154,21 @@ def dashboard():
     if not token:
         app.logger.warning("No OAuth token found in session")
         return redirect("/login")
-    return f"Logged in successfully! Token: {token}"
+    
+    github = OAuth2Session(client_id, token=token)
+    user_url = 'https://api.github.com/user'
+    user_response = github.get(user_url)
+    user_info = user_response.json()
+    
+    return f"""
+    <h1>Welcome, {user_info['login']}!</h1>
+    <img src="{user_info['avatar_url']}" width="100">
+    <p>Name: {user_info['name']}</p>
+    <p>Followers: {user_info['followers']}</p>
+    <p>Following: {user_info['following']}</p>
+    <p>Public Repos: {user_info['public_repos']}</p>
+    <a href="/starred">View Starred Repositories</a>
+    """
 
 @app.route("/debug")
 def debug():
