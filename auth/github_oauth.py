@@ -195,8 +195,8 @@ def starred_repos():
     <a href="/dashboard">Back to Dashboard</a>
     """
 
-@app.route("/similar_users")
-def similar_users():
+@app.route("/similar_repos")
+def similar_repos():
     token = session.get('oauth_token')
     if not token:
         app.logger.warning("No OAuth token found in session")
@@ -204,52 +204,41 @@ def similar_users():
     
     github = OAuth2Session(client_id, token=token)
     
-    # Get the number of users to display from the URL parameter, default to 20
-    num_users = int(request.args.get('num_users', 20))
-    
     # Get user's starred repositories
     starred_url = 'https://api.github.com/user/starred'
     starred_response = github.get(starred_url)
     starred_repos = starred_response.json()
     
-    similar_users = {}
+    repo_stats = {}
     
-    # For each starred repo, get users who also starred it
-    for repo in starred_repos[:5]:  # Limit to first 5 repos to avoid rate limiting
-        stargazers_url = f"https://api.github.com/repos/{repo['full_name']}/stargazers"
-        stargazers_response = github.get(stargazers_url)
-        stargazers = stargazers_response.json()
+    # For each starred repo, get its star count
+    for repo in starred_repos:
+        repo_name = repo['full_name']
+        repo_url = repo['html_url']
+        star_count = repo['stargazers_count']
         
-        for user in stargazers:
-            if user['login'] not in similar_users:
-                similar_users[user['login']] = 1
-            else:
-                similar_users[user['login']] += 1
+        repo_stats[repo_name] = {
+            'url': repo_url,
+            'stars': star_count
+        }
     
-    # Sort users by number of shared starred repos
-    sorted_users = sorted(similar_users.items(), key=lambda x: x[1], reverse=True)
+    # Sort repos by star count
+    sorted_repos = sorted(repo_stats.items(), key=lambda x: x[1]['stars'], reverse=True)
     
-    user_list = "<ul>"
-    for user, count in sorted_users[:num_users]:  # Show top num_users similar users
-        user_starred_url = f"https://api.github.com/users/{user}/starred"
-        user_starred_response = github.get(user_starred_url)
-        user_starred_repos = user_starred_response.json()
-        
-        repo_list = ", ".join([repo['name'] for repo in user_starred_repos[:5]])  # Show first 5 starred repos
-        
-        user_list += f"<li>{user} (Shared stars: {count}) - Starred repos: {repo_list}</li>"
-    user_list += "</ul>"
+    table_rows = ""
+    for repo_name, stats in sorted_repos:
+        table_rows += f"<tr><td><a href='{stats['url']}'>{repo_name}</a></td><td>{stats['stars']}</td></tr>"
     
     return f"""
-    <h1>Users with Similar Interests</h1>
-    <p>These users have starred some of the same repositories as you:</p>
-    {user_list}
-    <p>
-        <a href="/similar_users?num_users=10">Show 10</a> | 
-        <a href="/similar_users?num_users=20">Show 20</a> | 
-        <a href="/similar_users?num_users=50">Show 50</a> | 
-        <a href="/similar_users?num_users=100">Show 100</a>
-    </p>
+    <h1>Repositories You've Starred</h1>
+    <p>Here are the repositories you've starred, sorted by their star count:</p>
+    <table border="1">
+        <tr>
+            <th>Repository</th>
+            <th>Stars</th>
+        </tr>
+        {table_rows}
+    </table>
     <a href="/dashboard">Back to Dashboard</a>
     """
 
