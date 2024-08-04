@@ -11,8 +11,15 @@ client_secret = os.environ.get("GITHUB_CLIENT_SECRET")
 authorization_base_url = 'https://github.com/login/oauth/authorize'
 token_url = 'https://github.com/login/oauth/access_token'
 
+# Check if client_id and client_secret are set
+if not client_id or not client_secret:
+    raise ValueError("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set in environment variables")
+
 @app.route("/login")
 def login():
+    if not client_id:
+        return "Error: GitHub Client ID is not set. Please configure the application correctly.", 500
+    
     github = OAuth2Session(client_id)
     authorization_url, state = github.authorization_url(authorization_base_url)
     session['oauth_state'] = state
