@@ -3,6 +3,10 @@ import logging
 from flask import Flask, request, redirect, session, jsonify
 from requests_oauthlib import OAuth2Session
 
+# Check if we're in a development environment
+if os.environ.get('FLASK_ENV') == 'development':
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 app.config['SESSION_COOKIE_SECURE'] = True
