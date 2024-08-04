@@ -34,6 +34,9 @@ def login():
 @app.route("/callback")
 def callback():
     try:
+        app.logger.info(f"Callback received. URL: {request.url}")
+        app.logger.info(f"Session state: {session.get('oauth_state')}")
+        
         github = OAuth2Session(client_id, state=session.get('oauth_state'))
         token = github.fetch_token(token_url, client_secret=client_secret,
                                    authorization_response=request.url)
@@ -41,8 +44,8 @@ def callback():
         app.logger.info(f"OAuth token received: {token}")
         return redirect("/dashboard")
     except Exception as e:
-        app.logger.error(f"Error in callback: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error in callback: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e), "url": request.url, "state": session.get('oauth_state')}), 500
 
 # Add this new route to handle the root URL
 @app.route("/")
@@ -62,8 +65,14 @@ def debug():
     return jsonify({
         "session": dict(session),
         "request": {
+            "url": request.url,
             "headers": dict(request.headers),
-            "cookies": request.cookies
+            "cookies": request.cookies,
+            "args": dict(request.args)
+        },
+        "environment": {
+            "GITHUB_CLIENT_ID": os.environ.get("GITHUB_CLIENT_ID"),
+            "GITHUB_CLIENT_SECRET": "***" if os.environ.get("GITHUB_CLIENT_SECRET") else None
         }
     })
 
