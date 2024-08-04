@@ -170,6 +170,8 @@ def dashboard():
     <a href="/starred">View Starred Repositories</a>
     <br>
     <a href="/similar_users?num_users=20">Find Users with Similar Interests</a>
+    <br>
+    <a href="/similar_repos">View Repositories You've Starred</a>
     """
 
 @app.route("/starred")
@@ -192,6 +194,58 @@ def starred_repos():
     return f"""
     <h1>Your Starred Repositories</h1>
     {repo_list}
+    <a href="/dashboard">Back to Dashboard</a>
+    """
+
+@app.route("/similar_users")
+def similar_users():
+    token = session.get('oauth_token')
+    if not token:
+        app.logger.warning("No OAuth token found in session")
+        return redirect("/login")
+    
+    num_users = int(request.args.get('num_users', 20))
+    github = OAuth2Session(client_id, token=token)
+    
+    # Get user's starred repositories
+    starred_url = 'https://api.github.com/user/starred'
+    starred_response = github.get(starred_url)
+    starred_repos = starred_response.json()
+    
+    # Get users who starred the same repositories
+    similar_users = {}
+    for repo in starred_repos[:5]:  # Limit to first 5 repos to avoid rate limiting
+        stargazers_url = f"{repo['url']}/stargazers"
+        stargazers_response = github.get(stargazers_url)
+        stargazers = stargazers_response.json()
+        
+        for user in stargazers[:num_users]:  # Limit to specified number of users
+            if user['login'] not in similar_users:
+                similar_users[user['login']] = {
+                    'avatar_url': user['avatar_url'],
+                    'html_url': user['html_url'],
+                    'common_repos': []
+                }
+            similar_users[user['login']]['common_repos'].append(repo['full_name'])
+    
+    # Sort users by number of common repositories
+    sorted_users = sorted(similar_users.items(), key=lambda x: len(x[1]['common_repos']), reverse=True)
+    
+    user_list = ""
+    for username, user_data in sorted_users[:num_users]:
+        user_list += f"""
+        <li>
+            <img src="{user_data['avatar_url']}" width="50">
+            <a href="{user_data['html_url']}">{username}</a>
+            <br>Common repos: {', '.join(user_data['common_repos'])}
+        </li>
+        """
+    
+    return f"""
+    <h1>Users with Similar Interests</h1>
+    <ul>
+    {user_list}
+    </ul>
     <a href="/dashboard">Back to Dashboard</a>
     """
 
