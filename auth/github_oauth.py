@@ -231,7 +231,13 @@ def similar_users():
     
     user_list = "<ul>"
     for user, count in sorted_users[:num_users]:  # Show top num_users similar users
-        user_list += f"<li>{user} (Shared stars: {count})</li>"
+        user_starred_url = f"https://api.github.com/users/{user}/starred"
+        user_starred_response = github.get(user_starred_url)
+        user_starred_repos = user_starred_response.json()
+        
+        repo_list = ", ".join([repo['name'] for repo in user_starred_repos[:5]])  # Show first 5 starred repos
+        
+        user_list += f"<li>{user} (Shared stars: {count}) - Starred repos: {repo_list}</li>"
     user_list += "</ul>"
     
     return f"""
@@ -241,7 +247,8 @@ def similar_users():
     <p>
         <a href="/similar_users?num_users=10">Show 10</a> | 
         <a href="/similar_users?num_users=20">Show 20</a> | 
-        <a href="/similar_users?num_users=50">Show 50</a>
+        <a href="/similar_users?num_users=50">Show 50</a> | 
+        <a href="/similar_users?num_users=100">Show 100</a>
     </p>
     <a href="/dashboard">Back to Dashboard</a>
     """
