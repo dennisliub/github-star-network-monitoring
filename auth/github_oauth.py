@@ -89,9 +89,11 @@ def callback():
     try:
         github = OAuth2Session(client_id, state=session.get('oauth_state'))
         app.logger.info("Fetching token from GitHub")
+        app.logger.info(f"Authorization response URL: {request.url}")
         token = github.fetch_token(token_url, client_secret=client_secret,
                                    authorization_response=request.url)
         app.logger.info("Token successfully fetched")
+        app.logger.info(f"Token: {token}")  # Be careful with logging tokens in production
         session['oauth_token'] = token
         app.logger.info(f"OAuth token received and stored in session")
         app.logger.info("Redirecting to /dashboard")
