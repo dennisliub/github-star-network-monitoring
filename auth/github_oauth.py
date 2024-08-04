@@ -1,7 +1,7 @@
 import os
 import logging
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from flask import Flask, request, redirect, session, jsonify
 from requests_oauthlib import OAuth2Session
 
@@ -316,6 +316,12 @@ def cache_user_stars(github, username):
     user_starred_response = github.get(user_starred_url)
     user_starred_repos = user_starred_response.json()
     
+    # Fetch star date for each repository
+    for repo in user_starred_repos:
+        star_url = f'https://api.github.com/user/starred/{repo["full_name"]}'
+        star_response = github.get(star_url)
+        repo['starred_at'] = star_response.headers.get('Star-At')
+    
     with open(cache_file, 'w') as f:
         json.dump(user_starred_repos, f)
     
@@ -353,35 +359,55 @@ def similar_users_repos():
         
         for repo in user_starred_repos[:100]:  # Increased to 100 repos per user
             repo_name = repo['full_name']
+            starred_at = datetime.strptime(repo['starred_at'], "%Y-%m-%dT%H:%M:%SZ")
+            age_weight = calculate_age_weight(starred_at)
+            
             if repo_name not in all_repos:
                 all_repos[repo_name] = {
                     'url': repo['html_url'],
                     'stars': repo['stargazers_count'],
-                    'count': 1
+                    'count': 1,
+                    'weighted_count': age_weight
                 }
             else:
                 all_repos[repo_name]['count'] += 1
+                all_repos[repo_name]['weighted_count'] += age_weight
     
-    # Sort repos by count (number of similar users who starred it)
-    sorted_repos = sorted(all_repos.items(), key=lambda x: (x[1]['count'], x[1]['stars']), reverse=True)
+    # Sort repos by weighted count
+    sorted_repos = sorted(all_repos.items(), key=lambda x: (x[1]['weighted_count'], x[1]['stars']), reverse=True)
     
     table_rows = ""
     for repo_name, stats in sorted_repos[:100]:  # Show top 100 repos
-        table_rows += f"<tr><td><a href='{stats['url']}'>{repo_name}</a></td><td>{stats['stars']}</td><td>{stats['count']}</td></tr>"
+        table_rows += f"<tr><td><a href='{stats['url']}'>{repo_name}</a></td><td>{stats['stars']}</td><td>{stats['count']}</td><td>{stats['weighted_count']:.2f}</td></tr>"
     
     return f"""
     <h1>Repositories Starred by Users with Similar Interests</h1>
-    <p>Here are the top repositories starred by users with similar interests to you:</p>
+    <p>Here are the top repositories starred by users with similar interests to you, weighted by recency:</p>
     <table border="1">
         <tr>
             <th>Repository</th>
             <th>Total Stars</th>
             <th>Similar Users Who Starred</th>
+            <th>Weighted Count</th>
         </tr>
         {table_rows}
     </table>
     <a href="/dashboard">Back to Dashboard</a>
     """
+
+def calculate_age_weight(starred_at):
+    now = datetime.utcnow()
+    age = now - starred_at
+    if age <= timedelta(days=30):
+        return 1.0
+    elif age <= timedelta(days=90):
+        return 0.8
+    elif age <= timedelta(days=180):
+        return 0.6
+    elif age <= timedelta(days=365):
+        return 0.4
+    else:
+        return 0.2
 
 @app.route("/debug")
 def debug():
