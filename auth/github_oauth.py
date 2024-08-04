@@ -16,6 +16,7 @@ client_id = os.environ.get("GITHUB_CLIENT_ID")
 client_secret = os.environ.get("GITHUB_CLIENT_SECRET")
 authorization_base_url = 'https://github.com/login/oauth/authorize'
 token_url = 'https://github.com/login/oauth/access_token'
+redirect_uri = os.environ.get("GITHUB_REDIRECT_URI", "http://localhost:5000/callback")
 
 # Check if client_id and client_secret are set
 if not client_id or not client_secret:
@@ -38,8 +39,8 @@ def login():
     
     try:
         app.logger.info("Creating OAuth2Session")
-        github = OAuth2Session(client_id, redirect_uri=request.url_root + 'callback')
-        app.logger.info(f"OAuth2Session created successfully with redirect_uri: {request.url_root + 'callback'}")
+        github = OAuth2Session(client_id, redirect_uri=redirect_uri)
+        app.logger.info(f"OAuth2Session created successfully with redirect_uri: {redirect_uri}")
         
         app.logger.info("Generating authorization URL")
         authorization_url, state = github.authorization_url(authorization_base_url)
@@ -77,6 +78,7 @@ def callback():
     app.logger.info(f"Session state: {session.get('oauth_state')}")
     app.logger.info(f"Client ID: {client_id}")
     app.logger.info(f"Token URL: {token_url}")
+    app.logger.info(f"Redirect URI: {redirect_uri}")
 
     # Check if there's an error in the callback
     if 'error' in request.args:
